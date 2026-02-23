@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lockpicking Challenge</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #e8e8e8;
+            padding: 10px;
+        }
+
+        .game-container {
+            background: rgba(30, 30, 40, 0.9);
+            border: 3px solid #8b7355;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #d4af37;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #999;
+            margin-bottom: 20px;
+            font-style: italic;
+            font-size: 0.9em;
+        }
+
+        .lock-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 20px auto;
+            background: radial-gradient(circle, #4a4a4a 0%, #2a2a2a 100%);
+            border-radius: 50%;
+            border: 8px solid #6b5b4d;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 5px 20px rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .keyhole {
+            width: 35px;
+            height: 50px;
+            background: #1a1a1a;
+            border-radius: 50% 50% 0 0;
+            position: relative;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.9);
+        }
+
+        .keyhole::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 12px solid #1a1a1a;
+        }
+
+        .pins-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .pin {
+            width: 55px;
+            height: 110px;
+            background: #2a2a2a;
+            border: 2px solid #555;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
+        .pin:active {
+            transform: scale(0.95);
+            border-color: #d4af37;
+        }
+
+        .pin-inner {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(to top, #8b4513, #cd853f);
+            transition: height 0.3s ease;
+            border-radius: 0 0 6px 6px;
+        }
+
+        .pin.correct .pin-inner {
+            background: linear-gradient(to top, #2d8659, #4ade80);
+        }
+
+        .pin-label {
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #999;
+            z-index: 1;
+        }
+
+        .controls {
+            margin: 20px 0;
+        }
+
+        button {
+            background: #8b7355;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+            font-family: 'Georgia', serif;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: scale(0.95);
+            background: #a68968;
+        }
+
+        .status {
+            font-size: 18px;
+            margin: 15px 0;
+            min-height: 25px;
+            color: #d4af37;
+        }
+
+        .attempts {
+            color: #999;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .instructions {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .success {
+            color: #4ade80;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+        }
+
+        .fail {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .lockpick {
+            position: absolute;
+            width: 4px;
+            height: 70px;
+            background: linear-gradient(to bottom, #c0c0c0, #808080);
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+            transform-origin: bottom center;
+            transition: transform 0.3s;
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
+        .lockpick.active {
+            animation: wiggle 0.5s ease-in-out;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: translateX(-50%) rotate(0deg); }
+            25% { transform: translateX(-50%) rotate(-10deg); }
+            75% { transform: translateX(-50%) rotate(10deg); }
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .lock-container {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .pin {
+                width: 50px;
+                height: 100px;
+            }
+            
+            button {
+                padding: 10px 18px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🗝️ Lockpicking Challenge</h1>
+        <p class="subtitle">Зламайте замок!</p>
+
+        <div class="lock-container">
+            <div class="keyhole"></div>
+            <div class="lockpick" id="lockpick"></div>
+        </div>
+
+        <div class="pins-container" id="pinsContainer">
+            <!-- Pins will be generated by JavaScript -->
+        </div>
+
+        <div class="status" id="status">Натисніть на штифти щоб встановити правильну висоту</div>
+        <div class="attempts" id="attempts">Спроби: 0</div>
+
+        <div class="controls">
+            <button onclick="checkLock()">🔓 Відкрити замок</button>
+            <button onclick="resetGame()">🔄 Новий замок</button>
+        </div>
+
+        <div class="instructions">
+            <strong>Як грати:</strong><br>
+            • Натискайте на штифти щоб змінити висоту<br>
+            • Встановіть всі на правильні позиції<br>
+            • Натисніть "Відкрити замок" для перевірки
+        </div>
+    </div>
+
+    <script>
+        // Ініціалізація Telegram Web App
+        let tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        tg.setHeaderColor('#1a1a2e');
+        tg.setBackgroundColor('#16213e');
+
+        // Кнопка "Назад"
+        tg.BackButton.show();
+        tg.BackButton.onClick(() => {
+            window.history.back();
+        });
+
+        const numPins = 5;
+        let correctHeights = [];
+        let currentHeights = [];
+        let attempts = 0;
+
+        function initGame() {
+            correctHeights = [];
+            currentHeights = [];
+            attempts = 0;
+            
+            for (let i = 0; i < numPins; i++) {
+                correctHeights.push(Math.floor(Math.random() * 4) + 1);
+                currentHeights.push(1);
+            }
+
+            renderPins();
+            updateStatus('Натисніть на штифти щоб встановити правильну висоту');
+            updateAttempts();
+        }
+
+        function renderPins() {
+            const container = document.getElementById('pinsContainer');
+            container.innerHTML = '';
+
+            for (let i = 0; i < numPins; i++) {
+                const pin = document.createElement('div');
+                pin.className = 'pin';
+                pin.onclick = () => cyclePin(i);
+
+                const label = document.createElement('div');
+                label.className = 'pin-label';
+                label.textContent = `${i + 1}`;
+
+                const inner = document.createElement('div');
+                inner.className = 'pin-inner';
+                inner.style.height = (currentHeights[i] * 25) + '%';
+
+                pin.appendChild(label);
+                pin.appendChild(inner);
+                container.appendChild(pin);
+            }
+        }
+
+        function cyclePin(index) {
+            // Вібрація
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+
+            currentHeights[index] = (currentHeights[index] % 4) + 1;
+            renderPins();
+            
+            const lockpick = document.getElementById('lockpick');
+            lockpick.classList.remove('active');
+            void lockpick.offsetWidth;
+            lockpick.classList.add('active');
+        }
+
+        function checkLock() {
+            // Вібрація
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+
+            attempts++;
+            updateAttempts();
+
+            const lockpick = document.getElementById('lockpick');
+            lockpick.classList.remove('active');
+            void lockpick.offsetWidth;
+            lockpick.classList.add('active');
+
+            let allCorrect = true;
+            for (let i = 0; i < numPins; i++) {
+                if (currentHeights[i] === correctHeights[i]) {
+                    document.querySelectorAll('.pin')[i].classList.add('correct');
+                } else {
+                    document.querySelectorAll('.pin')[i].classList.remove('correct');
+                    allCorrect = false;
+                }
+            }
+
+            if (allCorrect) {
+                if (tg.HapticFeedback) {
+                    tg.HapticFeedback.notificationOccurred('success');
+                }
+                updateStatus('🎉 Успіх! Замок відкрито! 🎉', 'success');
+                setTimeout(() => {
+                    tg.showAlert(`Вітаємо! Ви відкрили замок за ${attempts} ${attempts === 1 ? 'спробу' : attempts < 5 ? 'спроби' : 'спроб'}!`);
+                }, 500);
+            } else {
+                if (tg.HapticFeedback) {
+                    tg.HapticFeedback.notificationOccurred('error');
+                }
+                const correctCount = currentHeights.filter((h, i) => h === correctHeights[i]).length;
+                updateStatus(`${correctCount} з ${numPins} штифтів правильно. Продовжуйте!`, 'fail');
+            }
+        }
+
+        function updateStatus(message, className = '') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + className;
+        }
+
+        function updateAttempts() {
+            document.getElementById('attempts').textContent = `Спроби: ${attempts}`;
+        }
+
+        function resetGame() {
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+            initGame();
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
