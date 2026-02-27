@@ -1,4 +1,5 @@
-Extendet Interaction Mini Games adn Stuff
+Dungeons and Dragons Mini Games or how i call it : E.I.M.G.a.S
+which stands for - Extendet Interaction Mini Games and Stuff
 
 Created for Telegram miniApps to use on our DnD sessions
 
