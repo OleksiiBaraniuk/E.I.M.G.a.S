@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Skyrim Lockpicking</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Реєструємо CSS змінні для анімації */
+        @property --hint-center {
+            syntax: '<angle>';
+            inherits: false;
+            initial-value: 0deg;
+        }
+
+        @property --hint-width {
+            syntax: '<angle>';
+            inherits: false;
+            initial-value: 20deg;
+        }
+
+        @property --hint-rotation {
+            syntax: '<angle>';
+            inherits: false;
+            initial-value: 0deg;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #e8e8e8;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        .setup-screen {
+            background: rgba(30, 30, 40, 0.9);
+            border: 3px solid #8b7355;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .setup-screen h1 {
+            color: #d4af37;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+
+        .setup-screen.hidden {
+            display: none;
+        }
+
+        .setup-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 2px solid rgba(139, 115, 85, 0.3);
+        }
+
+        .setup-section h3 {
+            color: #d4af37;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .difficulty-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .difficulty-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px 20px;
+            background: rgba(139, 115, 85, 0.5);
+            border: 2px solid #8b7355;
+            border-radius: 10px;
+            color: #e8e8e8;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Georgia', serif;
+            font-size: 14px;
+        }
+
+        .difficulty-btn:hover {
+            background: rgba(139, 115, 85, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .difficulty-btn.selected {
+            background: #8b7355;
+            border-color: #d4af37;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+        .difficulty-label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        .difficulty-desc {
+            font-size: 12px;
+            color: #bbb;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #d4af37;
+            font-size: 16px;
+        }
+
+        .input-group input[type="number"] {
+            width: 120px;
+            padding: 12px;
+            font-size: 20px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #8b7355;
+            border-radius: 8px;
+            color: #d4af37;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+        }
+
+        .input-group input[type="number"]:focus {
+            outline: none;
+            border-color: #d4af37;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+        }
+
+        .dex-modifier-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .dex-btn {
+            width: 40px;
+            height: 40px;
+            background: #8b7355;
+            border: 2px solid #d4af37;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dex-btn:hover {
+            background: #a68968;
+            transform: scale(1.1);
+        }
+
+        .dex-btn:active {
+            transform: scale(0.95);
+        }
+
+        .dex-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #d4af37;
+            min-width: 80px;
+        }
+
+        .rings-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(74, 222, 128, 0.1);
+            border: 2px solid rgba(74, 222, 128, 0.3);
+            border-radius: 8px;
+            color: #4ade80;
+            font-size: 15px;
+        }
+
+        .rings-info.many-rings {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .start-game-btn {
+            margin-top: 30px;
+            padding: 18px 40px;
+            font-size: 20px;
+            background: linear-gradient(145deg, #8b7355, #a68968);
+            border: 3px solid #d4af37;
+            border-radius: 12px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .start-game-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .start-game-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .game-container {
+            background: rgba(30, 30, 40, 0.9);
+            border: 3px solid #8b7355;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            display: none;
+        }
+
+        .game-container.active {
+            display: block;
+        }
+
+        h1 {
+            color: #d4af37;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #999;
+            margin-bottom: 20px;
+            font-style: italic;
+            font-size: 0.9em;
+        }
+
+        .lock-area {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 450px;
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lock-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+        }
+
+        /* Маркери підказки навколо замка */
+        .hint-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            transition: transform 0.5s linear;
+        }
+
+        .hint-marker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            background: var(--marker-color, #4ade80);
+            border-radius: 50%;
+            transform-origin: 0 0;
+            box-shadow: 0 0 10px var(--marker-color, #4ade80);
+            opacity: 0.9;
+        }
+
+        .hint-marker.center {
+            width: 12px;
+            height: 12px;
+            background: var(--marker-color, #4ade80);
+            box-shadow: 0 0 15px var(--marker-color, #4ade80), 0 0 25px var(--marker-color, #4ade80);
+            opacity: 1;
+            z-index: 2;
+        }
+
+        @keyframes wobbleHint {
+
+            0%,
+            100% {
+                transform: rotate(0deg) scale(1);
+            }
+
+            25% {
+                transform: rotate(2deg) scale(1.02);
+            }
+
+            50% {
+                transform: rotate(0deg) scale(1);
+            }
+
+            75% {
+                transform: rotate(-2deg) scale(0.98);
+            }
+        }
+
+        /* Зовнішнє кільце замка (етап 2) */
+        .lock-outer-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            border: 8px solid #555;
+            background: radial-gradient(circle, #3a3a3a 0%, #2a2a2a 100%);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(0, 0, 0, 0.8);
+            transition: transform 0.3s ease;
+            z-index: 2;
+        }
+
+        .lock-outer-ring.stage-complete {
+            opacity: 0.5;
+        }
+
+        /* Внутрішнє кільце замка (етап 1) */
+        .lock-inner-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 6px solid #666;
+            background: radial-gradient(circle, #4a4a4a 0%, #2a2a2a 100%);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(0, 0, 0, 0.9);
+            transition: transform 0.3s ease;
+            z-index: 3;
+        }
+
+        /* Центральний циліндр */
+        .lock-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 100%);
+            border: 4px solid #444;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
+            z-index: 4;
+        }
+
+        .keyhole {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 28px;
+            background: #0a0a0a;
+            border-radius: 50% 50% 0 0;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9);
+        }
+
+        .keyhole::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 6px solid #0a0a0a;
+        }
+
+        /* Відмичка всередині */
+        .lockpick {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 100px;
+            background: linear-gradient(to top, #505050 0%, #c0c0c0 70%, #808080 100%);
+            transform-origin: bottom center;
+            transform: translate(-50%, -100%) rotate(0deg);
+            border-radius: 2px 2px 0 0;
+            transition: transform 0.05s ease;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .lockpick::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 12px;
+            background: #a0a0a0;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .lockpick::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #606060;
+            border-radius: 50%;
+        }
+
+        .lockpick.broken {
+            animation: breakPick 0.4s ease forwards;
+        }
+
+        @keyframes breakPick {
+            0% {
+                transform: translate(-50%, -100%) rotate(var(--current-angle, 0deg));
+                opacity: 1;
+            }
+
+            50% {
+                transform: translate(-50%, -80%) rotate(calc(var(--current-angle, 0deg) + 20deg));
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: translate(-50%, 20%) rotate(calc(var(--current-angle, 0deg) + 90deg));
+                opacity: 0;
+            }
+        }
+
+        /* Анімації обертання кілець */
+        .lock-inner-ring.turning,
+        .lock-outer-ring.turning {
+            animation: tryTurn 0.4s ease;
+        }
+
+        .lock-inner-ring.success,
+        .lock-outer-ring.success {
+            animation: turnSuccess 0.8s ease forwards;
+        }
+
+        @keyframes tryTurn {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) rotate(var(--turn-amount, 15deg));
+            }
+
+            100% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+        }
+
+        @keyframes turnSuccess {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) rotate(90deg);
+            }
+        }
+
+        .stage-indicator {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            max-width: 100%;
+        }
+
+        .stage {
+            width: 50px;
+            height: 8px;
+            background: rgba(100, 100, 100, 0.3);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .stage.active {
+            background: rgba(212, 175, 55, 0.3);
+        }
+
+        .stage.complete {
+            background: rgba(74, 222, 128, 0.5);
+        }
+
+        .stage.complete::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #4ade80;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .lockpicks-count {
+            font-size: 20px;
+            color: #d4af37;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .lockpick-icon {
+            font-size: 24px;
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #8b7355;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Georgia', serif;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: scale(0.95);
+            background: #a68968;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            font-size: 18px;
+            margin: 15px 0;
+            color: #d4af37;
+            min-height: 30px;
+        }
+
+        .instructions {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .success {
+            color: #4ade80 !important;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+        }
+
+        .fail {
+            color: #ef4444 !important;
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .lock-area {
+                height: 400px;
+            }
+
+            .lock-container {
+                width: 250px;
+                height: 250px;
+            }
+
+            .hint-ring {
+                width: 290px;
+                height: 290px;
+            }
+
+            .lock-outer-ring {
+                width: 250px;
+                height: 250px;
+            }
+
+            .lock-inner-ring {
+                width: 160px;
+                height: 160px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Settings Screen-->
+    <div class="setup-screen" id="setupScreen">
+        <h1>🗝️ Settings of Lock</h1>
+        <p class="subtitle">Prepare/p>
+
+            <!-- Ampunt of Lockpicks -->
+        <div class="setup-section">
+            <h3>🔧 Amount of Lockpicks</h3>
+            <div class="input-group">
+                <label>Howm many do you have?</label>
+                <input type="number" id="lockpickCount" value="5" min="1" max="99" onchange="updateSetup()">
+            </div>
+        </div>
+
+        <!-- Sleight of Hand -->
+        <div class="setup-section">
+            <h3>🎯 Sleight of Hand</h3>
+            <div class="input-group">
+                <label>Your modifier :</label>
+                <div class="dex-modifier-group">
+                    <button class="dex-btn" onclick="changeSleightOfHand(-1)">−</button>
+                    <div class="dex-value" id="dexValue">+0</div>
+                    <button class="dex-btn" onclick="changeSleightOfHand(1)">+</button>
+                </div>
+                <div class="rings-info" id="ringsInfo">
+                    Amount to open: <strong>7</strong>
+                </div>
+                <div style="margin-top: 10px; font-size: 12px; color: #999; line-height: 1.6;">
+                    <strong>Note:</strong><br>
+                    Base: 7 rings ± (mod ÷ 5)<br>
+                    <span style="color: #4ade80;">🟢 Green zone: easy</span><br>
+                    <span style="color: #fbbf24;">🟡 Жовта зона: middle</span><br>
+                    <span style="color: #ef4444;">🔴 Червона зона: hard</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-game-btn" onclick="startGame()">
+            🎮 Lets open some locks
+        </button>
+    </div>
+
+    <!-- Game screan -->
+    <div class="game-container">
+        <h1>🗝️ Lockpicking</h1>
+        <p class="subtitle">Find point to open!</p>
+
+        <div class="stage-indicator">
+            <!-- Stages are dynamic -->
+        </div>
+
+        <div class="lock-area" id="lockArea">
+            <div class="lock-container">
+                <!-- hints -->
+                <div class="hint-ring" id="hintRing">
+                    <!-- hints are dynamic -->
+                </div>
+
+                <!-- Rings -->
+                <div class="lock-outer-ring" id="lockOuterRing"></div>
+                <div class="lock-inner-ring" id="lockInnerRing"></div>
+
+                <!-- Central cylinder -->
+                <div class="lock-core">
+                    <div class="keyhole"></div>
+                </div>
+
+                <!-- Lockpick inside -->
+                <div class="lockpick" id="lockpick"></div>
+            </div>
+        </div>
+
+        <div class="lockpicks-count">
+            <span class="lockpick-icon">🔧</span>
+            <span>Lockpicks: <strong id="lockpicksLeft">5</strong></span>
+        </div>
+
+        <div class="status" id="status">Move lockpick with mouse or finger</div>
+
+        <div class="controls">
+            <button onclick="attemptTurn()" id="turnBtn">🔓 Try (spacebar)</button>
+            <button onclick="resetGame()">🔄 New Lock</button>
+        </div>
+
+        <div class="instructions">
+            <strong>How to play:</strong><br>
+            •Move finger or mouse along lock to position lockpick<br>
+            • 🟢 Central point moves along lock in random direction<br>
+            • 🎯 Hit in Center = Sure to open(100%)<br>
+            • 🎲 Zone around = chanse (25-50%), but +20% break lockpick <br>
+            • Higher modifier = easier to you
+        </div>
+    </div>
+
+    <script>
+        // Telegram web app
+        let tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            tg.setHeaderColor('#1a1a2e');
+            tg.setBackgroundColor('#16213e');
+            tg.BackButton.show();
+            tg.BackButton.onClick(() => window.history.back());
+        }
+
+        // elements
+        const setupScreen = document.getElementById('setupScreen');
+        const gameContainer = document.querySelector('.game-container');
+        const lockpick = document.getElementById('lockpick');
+        const lockArea = document.getElementById('lockArea');
+        const lockInnerRing = document.getElementById('lockInnerRing');
+        const lockOuterRing = document.getElementById('lockOuterRing');
+        const hintRing = document.getElementById('hintRing');
+
+        // Change settings
+        let sleightOfHandModifier = 0;
+        let totalLockpicks = 5;
+        let numberOfRings = 7;
+
+        // Change games
+        let currentAngle = 0;
+        let stages = [];
+        let currentStage = 0;
+        let lockpicksLeft = 5;
+        let isLocked = true;
+
+        // Fixated difficlty
+        const lockDifficulty = { range: 15, name: 'Середній' };
+
+        // === Settings function ===
+
+        function changeSleightOfHand(delta) {
+            sleightOfHandModifier = Math.max(-5, Math.min(20, sleightOfHandModifier + delta));
+            updateSetup();
+
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        function updateSetup() {
+            // updated visual to Mod
+            const dexValue = document.getElementById('dexValue');
+            dexValue.textContent = (sleightOfHandModifier >= 0 ? '+' : '') + sleightOfHandModifier;
+
+            // Base ring count
+            const baseRings = 7;
+
+            if (sleightOfHandModifier >= 0) {
+                // +mod = less circles
+                const reduction = Math.floor(sleightOfHandModifier / 5);
+                numberOfRings = Math.max(2, baseRings - reduction);
+            } else {
+                // -mod = more circules
+                const increase = Math.ceil(Math.abs(sleightOfHandModifier) / 5);
+                numberOfRings = Math.min(12, baseRings + increase);
+            }
+
+            // Обчислюємо ширину зони для визначення кольору
+            const baseHintWidth = 5;
+            const modifierBonus = sleightOfHandModifier * 0.5;
+            const hintWidth = Math.max(3, Math.min(15, baseHintWidth + modifierBonus));
+
+            // Коригуємо кількість кілець залежно від кольору зони
+            let colorAdjustment = 0;
+            let colorName = '';
+
+            if (hintWidth >= 10) {
+                colorAdjustment = -1; // Зелений: -1 кільце
+                colorName = 'Зелена зона';
+            } else if (hintWidth >= 6) {
+                colorAdjustment = +1; // Жовтий: +1 кільце
+                colorName = 'Жовта зона';
+            } else {
+                colorAdjustment = +3; // Червоний: +3 кільця
+                colorName = 'Червона зона';
+            }
+
+            numberOfRings = Math.max(2, Math.min(12, numberOfRings + colorAdjustment));
+
+            // Оновлюємо інфо про кільця
+            const ringsInfo = document.getElementById('ringsInfo');
+            ringsInfo.innerHTML = `Кількість кілець: <strong>${numberOfRings}</strong> (${colorName})`;
+
+            // Міняємо колір залежно від складності
+            if (numberOfRings <= 4) {
+                ringsInfo.className = 'rings-info';
+                ringsInfo.style.background = 'rgba(74, 222, 128, 0.1)';
+                ringsInfo.style.borderColor = 'rgba(74, 222, 128, 0.3)';
+                ringsInfo.style.color = '#4ade80';
+            } else if (numberOfRings >= 9) {
+                ringsInfo.className = 'rings-info many-rings';
+                ringsInfo.style.background = 'rgba(239, 68, 68, 0.1)';
+                ringsInfo.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                ringsInfo.style.color = '#ef4444';
+            } else {
+                ringsInfo.className = 'rings-info';
+                ringsInfo.style.background = 'rgba(251, 191, 36, 0.1)';
+                ringsInfo.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+                ringsInfo.style.color = '#fbbf24';
+            }
+
+            // Оновлюємо кількість відмичок
+            totalLockpicks = parseInt(document.getElementById('lockpickCount').value) || 5;
+        }
+
+        function startGame() {
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+
+            // Приховуємо екран налаштування
+            setupScreen.classList.add('hidden');
+            gameContainer.classList.add('active');
+
+            // Ініціалізуємо гру з вибраними налаштуваннями
+            initGame();
+        }
+
+        // === ФУНКЦІЇ ГРИ ===
+
+        function initGame() {
+            // Створюємо етапи (кільця) на основі налаштувань
+            stages = [];
+
+            for (let i = 0; i < numberOfRings; i++) {
+                stages.push({
+                    sweetSpot: Math.random() * 360,
+                    range: lockDifficulty.range,
+                    complete: false
+                });
+            }
+
+            currentStage = 0;
+            currentAngle = 0;
+            isLocked = true;
+            lockpicksLeft = totalLockpicks;
+
+            // Оновлюємо UI
+            updateLockpicks();
+            updateStageIndicator();
+            updateHintRing();
+            updateStatus(`Етап 1/${numberOfRings}: Відкрийте кільце`);
+
+            // Скидаємо анімації
+            lockInnerRing.classList.remove('turning', 'success', 'stage-complete');
+            lockOuterRing.classList.remove('turning', 'success', 'stage-complete');
+            lockpick.classList.remove('broken');
+            lockInnerRing.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+            lockOuterRing.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+        }
+
+        function updateStageIndicator() {
+            const stageContainer = document.querySelector('.stage-indicator');
+            stageContainer.innerHTML = '';
+
+            // Створюємо індикатори для всіх етапів
+            for (let i = 0; i < stages.length; i++) {
+                const stageDiv = document.createElement('div');
+                stageDiv.className = 'stage';
+
+                if (stages[i].complete) {
+                    stageDiv.classList.add('complete');
+                } else if (i === currentStage) {
+                    stageDiv.classList.add('active');
+                }
+
+                stageContainer.appendChild(stageDiv);
+            }
+        }
+
+        function updateHintRing() {
+            const stage = stages[currentStage];
+
+            // Обчислюємо ширину зони підказки
+            const baseHintWidth = 5;
+            const modifierBonus = sleightOfHandModifier * 0.5;
+            const hintWidth = Math.max(3, Math.min(15, baseHintWidth + modifierBonus));
+
+            // Визначаємо колір маркерів
+            let markerColor;
+            if (hintWidth >= 10) {
+                markerColor = '#4ade80'; // Зелений
+            } else if (hintWidth >= 6) {
+                markerColor = '#fbbf24'; // Жовтий
+            } else {
+                markerColor = '#ef4444'; // Червоний
+            }
+
+            // Швидкість руху - збільшено на ~30%
+            // При +20: 2.8 секунди (було 4)
+            // При -5: 0.7 секунди (було 1)
+            const baseTime = 1400; // Зменшено з 2000
+            const timeModifier = sleightOfHandModifier * 70; // Зменшено з 100
+            const movementTime = Math.max(700, Math.min(2800, baseTime + timeModifier));
+
+            // Радіус для розміщення маркерів
+            const radius = 160;
+
+            // Очищаємо попередні маркери та створюємо нові
+            hintRing.innerHTML = '';
+
+            // Створюємо центральний маркер (в центрі контейнера)
+            const centerMarker = document.createElement('div');
+            centerMarker.className = 'hint-marker center';
+            centerMarker.style.setProperty('--marker-color', markerColor);
+            centerMarker.style.transform = `translate(0px, -${radius}px) translate(-50%, -50%)`;
+            hintRing.appendChild(centerMarker);
+
+            // Створюємо маркери по краях зони
+            const numberOfMarkers = Math.ceil(hintWidth / 2);
+
+            for (let i = 1; i <= numberOfMarkers; i++) {
+                const offset = (hintWidth / numberOfMarkers) * i;
+
+                // Лівий маркер
+                const leftMarker = document.createElement('div');
+                leftMarker.className = 'hint-marker';
+                leftMarker.style.setProperty('--marker-color', markerColor);
+
+                const leftAngleRad = (-offset) * Math.PI / 180;
+                const leftX = Math.sin(leftAngleRad) * radius;
+                const leftY = -Math.cos(leftAngleRad) * radius;
+
+                leftMarker.style.transform = `translate(${leftX}px, ${leftY}px) translate(-50%, -50%)`;
+                leftMarker.style.opacity = 0.9 - (i * 0.15);
+                hintRing.appendChild(leftMarker);
+
+                // Правий маркер
+                const rightMarker = document.createElement('div');
+                rightMarker.className = 'hint-marker';
+                rightMarker.style.setProperty('--marker-color', markerColor);
+
+                const rightAngleRad = (offset) * Math.PI / 180;
+                const rightX = Math.sin(rightAngleRad) * radius;
+                const rightY = -Math.cos(rightAngleRad) * radius;
+
+                rightMarker.style.transform = `translate(${rightX}px, ${rightY}px) translate(-50%, -50%)`;
+                rightMarker.style.opacity = 0.9 - (i * 0.15);
+                hintRing.appendChild(rightMarker);
+            }
+
+            // Базова позиція (центр можливого діапазону)
+            const basePosition = stage.sweetSpot;
+
+            // Рух по всій ширині замка - 150° діапазон (від -75° до +75°)
+            const fullRange = 150;
+
+            let currentRotation = basePosition;
+            let targetRotation = basePosition;
+
+            // Функція для оновлення обертання
+            function updateRotation() {
+                if (!isLocked) {
+                    if (window.hintInterval) {
+                        clearInterval(window.hintInterval);
+                        window.hintInterval = null;
+                    }
+                    return;
+                }
+
+                // Генеруємо нову ВИПАДКОВУ позицію в межах всього діапазону
+                // Від (basePosition - 75°) до (basePosition + 75°)
+                const randomOffset = (Math.random() - 0.5) * fullRange;
+                targetRotation = basePosition + randomOffset;
+
+                // Плавно обертаємо весь контейнер
+                hintRing.style.transition = `transform ${movementTime / 1000}s ease-in-out`;
+                hintRing.style.transform = `translate(-50%, -50%) rotate(${targetRotation}deg)`;
+
+                // Оновлюємо позицію солодкої точки для attemptTurn
+                stage.sweetSpot = targetRotation;
+            }
+
+            // Зупиняємо попередній інтервал
+            if (window.hintInterval) {
+                clearInterval(window.hintInterval);
+            }
+
+            // Встановлюємо початкову позицію
+            hintRing.style.transition = 'none';
+            hintRing.style.transform = `translate(-50%, -50%) rotate(${currentRotation}deg)`;
+
+            // Запускаємо рух після невеликої затримки
+            setTimeout(() => {
+                updateRotation();
+                window.hintInterval = setInterval(updateRotation, movementTime);
+            }, 100);
+        }
+
+        function updateLockpicks() {
+            document.getElementById('lockpicksLeft').textContent = lockpicksLeft;
+        }
+
+        function updateStatus(message, type = '') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        function rotateLockpick(angle) {
+            currentAngle = angle % 360;
+            if (currentAngle < 0) currentAngle += 360;
+            lockpick.style.transform = `translate(-50%, -100%) rotate(${currentAngle}deg)`;
+        }
+
+        function attemptTurn() {
+            if (!isLocked || lockpicksLeft <= 0) return;
+
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+
+            const stage = stages[currentStage];
+
+            // Обчислюємо найкоротшу різницю між кутами
+            let difference = Math.abs(currentAngle - stage.sweetSpot);
+            if (difference > 180) difference = 360 - difference;
+
+            // Обчислюємо ширину зони (така ж формула як в updateHintRing)
+            const baseHintWidth = 5;
+            const modifierBonus = sleightOfHandModifier * 0.5;
+            const hintWidth = Math.max(3, Math.min(15, baseHintWidth + modifierBonus));
+
+            // Перевіряємо чи потрапили точно в центр (в межах range для гарантованого успіху)
+            if (difference <= stage.range) {
+                // Гарантований успіх - точно в центрі
+                completeStage();
+            } else if (difference <= hintWidth) {
+                // Попали в зону маркерів - є шанс на успіх!
+                // Обчислюємо ймовірність на основі модифікатора
+                const baseProbability = 0.35;
+                const modifierEffect = sleightOfHandModifier * -0.01;
+                const probability = Math.max(0.25, Math.min(0.50, baseProbability + modifierEffect));
+
+                const roll = Math.random();
+
+                if (roll < probability) {
+                    // Успіх! Пощастило!
+                    updateStatus(`🎲 Пощастило! (шанс: ${Math.round(probability * 100)}%)`, 'success');
+
+                    setTimeout(() => {
+                        completeStage();
+                    }, 800);
+                } else {
+                    // Не пощастило - підвищений шанс зламати відмичку (+20%)
+                    const baseBreakChance = 0.30; // 30% базовий шанс
+                    const zoneBreakBonus = 0.20; // +20% за промах в зоні
+                    const breakChance = baseBreakChance + zoneBreakBonus; // = 50% шанс зламати
+
+                    const breakRoll = Math.random();
+
+                    if (breakRoll < breakChance) {
+                        // Відмичка ламається!
+                        updateStatus(`💥 Відмичка зламалась! (шанс був: ${Math.round(probability * 100)}%)`, 'fail');
+                        breakLockpick();
+                    } else {
+                        // Просто не пощастило, але відмичка ціла
+                        const maxTurn = Math.max(5, 60 - difference * 1.5);
+                        updateStatus(`❌ Не пощастило (шанс був: ${Math.round(probability * 100)}%)`, 'fail');
+
+                        const currentRing = currentStage % 2 === 0 ? lockInnerRing : lockOuterRing;
+                        currentRing.style.setProperty('--turn-amount', maxTurn + 'deg');
+                        currentRing.classList.add('turning');
+
+                        setTimeout(() => {
+                            currentRing.classList.remove('turning');
+                        }, 400);
+                    }
+                }
+            } else {
+                // Поза зоною - відмичка ламається або частково обертається
+                const maxTurn = Math.max(5, 90 - difference * 2);
+                attemptPartialTurn(maxTurn, difference);
+            }
+        }
+
+        function attemptPartialTurn(maxTurn, difference) {
+            const currentRing = currentStage === 0 ? lockInnerRing : lockOuterRing;
+
+            currentRing.style.setProperty('--turn-amount', maxTurn + 'deg');
+            currentRing.classList.add('turning');
+
+            setTimeout(() => {
+                currentRing.classList.remove('turning');
+
+                // Якщо дуже далеко - ламаємо відмичку
+                if (difference > 60) {
+                    breakLockpick();
+                } else {
+                    updateStatus(`Майже! Ще трохи... (Відхилення: ${Math.round(difference)}°)`, '');
+                }
+            }, 400);
+        }
+
+        function completeStage() {
+            stages[currentStage].complete = true;
+
+            const currentRing = currentStage % 2 === 0 ? lockInnerRing : lockOuterRing;
+            currentRing.classList.add('success');
+
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+
+            setTimeout(() => {
+                currentRing.classList.add('stage-complete');
+
+                if (currentStage < stages.length - 1) {
+                    // Переходимо до наступного етапу
+                    currentStage++;
+                    updateStageIndicator();
+                    updateHintRing();
+                    updateStatus(`🎯 Етап ${currentStage}/${numberOfRings} пройдено! Продовжуємо...`, 'success');
+
+                    setTimeout(() => {
+                        updateStatus(`Етап ${currentStage + 1}/${numberOfRings}: Відкрийте наступне кільце`);
+                        // Повертаємо попереднє кільце назад
+                        currentRing.classList.remove('success');
+                        currentRing.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+                    }, 2000);
+                } else {
+                    // Гра завершена!
+                    lockSuccess();
+                }
+            }, 800);
+        }
+
+        function breakLockpick() {
+            lockpicksLeft--;
+            updateLockpicks();
+
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+
+            lockpick.style.setProperty('--current-angle', currentAngle + 'deg');
+            lockpick.classList.add('broken');
+
+            setTimeout(() => {
+                lockpick.classList.remove('broken');
+
+                if (lockpicksLeft <= 0) {
+                    updateStatus('💔 Відмичок не залишилось! Замок не відкритий.', 'fail');
+                    isLocked = false;
+                    if (tg) {
+                        setTimeout(() => {
+                            tg.showAlert('Ви зламали всі відмички! Спробуйте ще раз.');
+                        }, 500);
+                    }
+                } else {
+                    updateStatus(`💥 Відмичка зламалась! Залишилось: ${lockpicksLeft}`, 'fail');
+                }
+            }, 400);
+        }
+
+        function lockSuccess() {
+            isLocked = false;
+
+            // Зупиняємо рух підказки
+            if (window.hintInterval) {
+                clearInterval(window.hintInterval);
+            }
+
+            updateStageIndicator();
+            updateStatus(`🎉 Замок повністю відкрито! Пройдено ${numberOfRings} кілець!`, 'success');
+
+            if (tg) {
+                setTimeout(() => {
+                    const used = totalLockpicks - lockpicksLeft;
+                    tg.showAlert(`Вітаємо! Ви відкрили замок!\n\nПройдено кілець: ${numberOfRings}\nВикористано відмичок: ${used}\nЗалишилось: ${lockpicksLeft}`);
+                }, 1000);
+            }
+        }
+
+        function resetGame() {
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+
+            // Повертаємось на екран налаштування
+            gameContainer.classList.remove('active');
+            setupScreen.classList.remove('hidden');
+
+            // Зупиняємо інтервал підказки
+            if (window.hintInterval) {
+                clearInterval(window.hintInterval);
+            }
+        }
+
+        // Обробка миші та дотику
+        function getAngleFromMouse(clientX, clientY) {
+            const rect = lockArea.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const deltaX = clientX - centerX;
+            const deltaY = clientY - centerY;
+
+            let angle = Math.atan2(deltaX, -deltaY) * (180 / Math.PI);
+            if (angle < 0) angle += 360;
+
+            return angle;
+        }
+
+        lockArea.addEventListener('mousemove', (e) => {
+            if (!isLocked || lockpicksLeft <= 0) return;
+            const angle = getAngleFromMouse(e.clientX, e.clientY);
+            rotateLockpick(angle);
+        });
+
+        lockArea.addEventListener('touchmove', (e) => {
+            if (!isLocked || lockpicksLeft <= 0) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const angle = getAngleFromMouse(touch.clientX, touch.clientY);
+            rotateLockpick(angle);
+        });
+
+        // Клавіша пробіл
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                attemptTurn();
+            }
+        });
+
+        // Ініціалізація налаштувань
+        updateSetup();
+    </script>
+</body>
+
+</html>
